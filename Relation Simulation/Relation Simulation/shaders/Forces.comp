@@ -40,7 +40,8 @@ void main(){
         //Social Force
         dir_buff = reading_persons[ordered_list[i+pos[id].rel_offset]].position - pos[id].position;
         dist = length(dir_buff);
-        force += pow(rel_amount_list[i+pos[id].rel_offset]-1.f,3.f)*dir_buff/max(dist,0.001f)*sqrt(dist)/1000.f;
+        float love_buff = rel_amount_list[i+pos[id].rel_offset]-1.f;
+        force += love_buff*love_buff*love_buff*dir_buff/max(dist,0.001f)*sqrt(dist)/1000.f;
         bool bool_buff = isnan(normalize(dir_buff)).x;
         if(bool_buff)
             pos[id].color = vec4(1.f,0.f,0.f,1.f);
