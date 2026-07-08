@@ -1,0 +1,88 @@
+#version 430 core
+uniform float delta_time;
+uniform uint total_people;
+
+struct Person{
+    uint id;
+    uint rel_offset;
+    uint rel_count;
+    vec2 position;
+    vec2 velocity;
+    vec2 acceleration;
+    vec4 color;
+};
+float rand(vec2 co) {
+    return fract(sin(dot(co, vec2(-12.9898f, 78.233f))) * 43758.5453f);
+}
+layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430,binding = 0) buffer PersonBuffer{
+    Person reading_persons[];
+};
+layout(std430,binding = 1) buffer RelationsIDbuffer{
+    uint ordered_list[];
+};
+layout(std430,binding = 2) buffer Relationsfloatbuffer{
+    float rel_amount_list[];
+};
+layout(std430,binding = 3) buffer write_ssbo{
+    Person pos[];
+};
+
+void main(){
+    uint id = gl_GlobalInvocationID.x;
+    pos[id] = reading_persons[id];
+
+    //force calculations
+    float angle_buff;
+    vec2 force = vec2(0);
+    vec2 dir_buff = vec2(0);
+    float dist;
+    for(int i = 0; i < pos[id].rel_count; i++){
+        //Social Force
+        dir_buff = reading_persons[ordered_list[i+pos[id].rel_offset]].position - pos[id].position;
+        dist = length(dir_buff);
+        if(dist<0.1f){
+            dist = 0.1f;
+            angle_buff = (id+i)*1123.65f;
+            dir_buff = 0.1f*vec2(sin(angle_buff),cos(angle_buff));
+        }
+        force +=
+        pow(rel_amount_list[i+pos[id].rel_offset]-1.f,3.f)
+        *normalize(dir_buff)
+        *sqrt(dist)/1000.f
+        ;
+        vec2 bool_buff = vec2(isnan(normalize(dir_buff)).x,isnan(normalize(dir_buff)).y);
+        if(bool_buff.x != 0 || bool_buff.y != 0)
+            pos[id].color = vec4(1.f,0.f,0.f,0.1f);
+    }
+    for(int i=0;i<total_people;i++){
+        //Personal Force
+        if(reading_persons[i].id != pos[id].id){
+            dir_buff = reading_persons[i].position - pos[id].position;
+            dist = length(dir_buff);
+            if(dist<0.1f){
+                dist = 0.1f;
+                angle_buff = id*1123.65f;
+                dir_buff = 0.1f*vec2(sin(angle_buff),cos(angle_buff));
+            }
+            force -= 10*normalize(dir_buff)/(dist*dist+0.1f);
+            vec2 bool_buff = vec2(isnan(normalize(dir_buff)).x,isnan(normalize(dir_buff)).y);
+            if(bool_buff.x != 0 || bool_buff.y != 0)
+                pos[id].color = vec4(0.f,0.f,1.f,0.1f);
+            }
+    }
+    pos[id].acceleration = force;
+    pos[id].velocity+=delta_time*pos[id].acceleration/2;
+    if(isnan(pos[id].velocity.x) || isnan(pos[id].velocity.y) || isnan(pos[id].position.x) || isnan(pos[id].position.y)){
+        pos[id].position = vec2(0,0);
+        if(pos[id].color == vec4(1))
+            pos[id].color = vec4(0.f,1.f,0.f,0.1f);
+    }
+    else{
+        pos[id].position+=delta_time*pos[id].velocity;
+        pos[id].velocity+=delta_time*pos[id].acceleration/2;
+    }
+
+    pos[id].velocity *= 0.95f;
+}

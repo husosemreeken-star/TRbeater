@@ -1,0 +1,28 @@
+{
+    "Persons": [
+        {
+            "id": 12412,
+            "name": "Jack",
+            "relations": {
+                "Alice": 9.34,
+                "John": 7.20,
+                "Muhammed": 10.00
+            }
+        },
+        {
+            "id": 20112,
+            "name": "Alice",
+            "relations": {
+                "Jack": 9.6
+            }
+        },
+        {
+            "id": 20113,
+            "name": "Muhammed",
+            "relations": {
+                "John": 7.20,
+                "Jack": 6.63
+            }
+        }
+    ]
+}
